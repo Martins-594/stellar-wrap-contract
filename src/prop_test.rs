@@ -11,6 +11,7 @@ use soroban_sdk::{testutils::Address as _, Address, BytesN, Env, Symbol};
 
 use crate::mint::CURRENT_PAYLOAD_VERSION;
 use crate::signature::construct_mint_payload;
+use crate::ContractError;
 
 // ── Shared test constants ────────────────────────────────────────────────────
 
@@ -243,5 +244,33 @@ proptest! {
         let user = Address::generate(&env);
 
         prop_assert!(client.get_wrap(&user, &period).is_none());
+    }
+}
+
+proptest! {
+    #[test]
+    fn prop_admin_proposal_duration_overflow(
+        _dummy in 0..1u64,
+    ) {
+        let (env, client, _, _, _) = setup_env();
+        let start_time = u64::MAX;
+        let duration_seconds = 1u64;
+        let result = client.try_create_admin_proposal(&start_time, &duration_seconds);
+        prop_assert_eq!(result, Err(ContractError::ArithmeticOverflow));
+    }
+}
+
+proptest! {
+    #[test]
+    fn prop_outbound_nonce_overflow(
+        _dummy in 0..1u64,
+    ) {
+        let (env, client, _, _, _) = setup_env();
+        env.put_contract_data(&Symbol::new(&env, "current_nonce"), &u32::MAX);
+        let to = Address::generate(&env);
+        let amount = 100i128;
+        let nonce = 0u32;
+        let result = client.try_bridge_out(&to, &amount, &nonce);
+        prop_assert_eq!(result, Err(ContractError::ArithmeticOverflow));
     }
 }
