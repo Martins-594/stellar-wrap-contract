@@ -297,3 +297,44 @@ fn test_bridge_paused_blocks_operations() {
     }));
     assert!(in_result.is_err());
 }
+
+#[test]
+fn test_bridge_wrap_out_nonce_overflow_panics() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (client, _admin, _relayer, signing_key) = setup_test_env(&env);
+
+    let user = Address::generate(&env);
+    let period = 202607u64;
+    let archetype = symbol_short!("arch");
+    let data_hash = BytesN::from_array(&env, &[42u8; 32]);
+
+    let sig = sign_mint_payload(
+        &env,
+        &signing_key,
+        &client.address,
+        &user,
+        period,
+        &archetype,
+        &data_hash,
+    );
+
+    client.mint_wrap(&user, &period, &archetype, &data_hash, &1, &sig);
+
+    let dest_chain = 1u32;
+    client.set_chain_status(&dest_chain, &true);
+
+    env.as_contract(&client.address, || {
+        env.storage()
+            .instance()
+            .set(&DataKey::OutboundNonce, &u64::MAX);
+    });
+
+    let recipient = Bytes::from_array(&env, b"recipient");
+    let result = catch_unwind(AssertUnwindSafe(|| {
+        client.bridge_wrap_out(&user, &dest_chain, &recipient, &period);
+    }));
+
+    assert!(result.is_err());
+}
