@@ -119,7 +119,7 @@ pub(crate) fn mint_wrap(
     // Update wrap count and account for count entry if first insert
     let count_key = DataKey::WrapCount(user.clone());
     let current_count: u32 = e.storage().persistent().get(&count_key).unwrap_or(0);
-    let next_count = current_count + 1;
+    let next_count = current_count.checked_add(1).unwrap_or_else(|| panic_with_error!(e, ContractError::ArithmeticOverflow));
     e.storage().persistent().set(&count_key, &next_count);
     e.storage()
         .persistent()
@@ -127,7 +127,7 @@ pub(crate) fn mint_wrap(
 
     let total_key = DataKey::TotalWrapCount;
     let current_total: u32 = e.storage().persistent().get(&total_key).unwrap_or(0);
-    let next_total = current_total + 1;
+    let next_total = current_total.checked_add(1).unwrap_or_else(|| panic_with_error!(e, ContractError::ArithmeticOverflow));
     e.storage().persistent().set(&total_key, &next_total);
     e.storage()
         .persistent()
@@ -296,7 +296,7 @@ pub(crate) fn mint_wrap_batch(
 
         let count_key = DataKey::WrapCount(item.user.clone());
         let current_count: u32 = e.storage().persistent().get(&count_key).unwrap_or(0);
-        let next_count = current_count + 1;
+        let next_count = current_count.checked_add(1).unwrap_or_else(|| panic_with_error!(e, ContractError::ArithmeticOverflow));
         e.storage().persistent().set(&count_key, &next_count);
         e.storage()
             .persistent()
@@ -304,7 +304,7 @@ pub(crate) fn mint_wrap_batch(
 
         let total_key = DataKey::TotalWrapCount;
         let current_total: u32 = e.storage().persistent().get(&total_key).unwrap_or(0);
-        let next_total = current_total + 1;
+        let next_total = current_total.checked_add(1).unwrap_or_else(|| panic_with_error!(e, ContractError::ArithmeticOverflow));
         e.storage().persistent().set(&total_key, &next_total);
         e.storage()
             .persistent()
