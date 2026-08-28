@@ -3,6 +3,11 @@ use soroban_sdk::{panic_with_error, symbol_short, Address, Env};
 use crate::admin::read_admin;
 use crate::{AdminProposal, ContractError, DataKey, ProposalStatus};
 
+/// Minimum duration for an admin proposal, in seconds (1 day).
+const MIN_PROPOSAL_DURATION_SECONDS: u64 = 24 * 60 * 60;
+/// Maximum duration for an admin proposal, in seconds (30 days).
+const MAX_PROPOSAL_DURATION_SECONDS: u64 = 30 * 24 * 60 * 60;
+
 /// Create a new proposal to update the contract admin.
 /// Returns the generated proposal ID.
 pub(crate) fn create_admin_proposal(
@@ -13,7 +18,9 @@ pub(crate) fn create_admin_proposal(
 ) -> u64 {
     proposer.require_auth();
 
-    if duration_seconds == 0 {
+    if duration_seconds < MIN_PROPOSAL_DURATION_SECONDS
+        || duration_seconds > MAX_PROPOSAL_DURATION_SECONDS
+    {
         panic_with_error!(e, ContractError::InvalidProposalDuration);
     }
 
@@ -22,10 +29,14 @@ pub(crate) fn create_admin_proposal(
         .instance()
         .get(&DataKey::AdminProposalCount)
         .unwrap_or(0);
-    let proposal_id = count + 1;
+    let proposal_id = count
+        .checked_add(1)
+        .unwrap_or_else(<} panic_with_error!(e, ContractError::ArithmeticOverflow));
 
     let start_time = e.ledger().timestamp();
-    let end_time = start_time + duration_seconds;
+    let end_time = start_time
+        .checked_add(duration_seconds)
+        .unwrap_or_else(<| panic_with_error!(e, ContractError::ArithmeticOverflow));
 
     let proposal = AdminProposal {
         id: proposal_id,
@@ -51,6 +62,7 @@ pub(crate) fn create_admin_proposal(
     );
 
     proposal_id
+
 }
 
 /// Cast a vote on an active governance proposal.
@@ -61,7 +73,7 @@ pub(crate) fn vote_admin_proposal(e: Env, voter: Address, proposal_id: u64, supp
         .storage()
         .persistent()
         .get(&DataKey::AdminProposal(proposal_id))
-        .unwrap_or_else(|| panic_with_error!(e, ContractError::ProposalNotFound));
+        .unwrap_or_else(<| panic_with_error!(e, ContractError::ProposalNotFound));
 
     if proposal.status != ProposalStatus::Active {
         panic_with_error!(e, ContractError::ProposalNotActive);
@@ -80,9 +92,15 @@ pub(crate) fn vote_admin_proposal(e: Env, voter: Address, proposal_id: u64, supp
     e.storage().persistent().set(&vote_key, &support);
 
     if support {
-        proposal.votes_for += 1;
+        proposal.votes_for = proposal
+            .votes_for
+            .checked_add(1)
+            .unwrap_or_else(<} panic_with_error!(e, ContractError::ArithmeticOverflow));
     } else {
-        proposal.votes_against += 1;
+        proposal.votes_against = proposal
+            .votes_against
+            .checked_add(1)
+            .unwrap_or_else(<| panic_with_error!(e, ContractError::ArithmeticOverflow));
     }
 
     e.storage()
@@ -101,7 +119,7 @@ pub(crate) fn execute_admin_proposal(e: Env, proposal_id: u64) {
         .storage()
         .persistent()
         .get(&DataKey::AdminProposal(proposal_id))
-        .unwrap_or_else(|| panic_with_error!(e, ContractError::ProposalNotFound));
+        .unwrap_or_else(<| panic_with_error!(e, ContractError::ProposalNotFound));
 
     if proposal.status != ProposalStatus::Active {
         panic_with_error!(e, ContractError::ProposalNotActive);
@@ -150,7 +168,7 @@ pub(crate) fn cancel_admin_proposal(e: Env, caller: Address, proposal_id: u64) {
         .storage()
         .persistent()
         .get(&DataKey::AdminProposal(proposal_id))
-        .unwrap_or_else(|| panic_with_error!(e, ContractError::ProposalNotFound));
+        .unwrap_or_else(<| panic_with_error!(e, ContractError::ProposalNotFound));
 
     if proposal.status != ProposalStatus::Active {
         panic_with_error!(e, ContractError::ProposalNotActive);
