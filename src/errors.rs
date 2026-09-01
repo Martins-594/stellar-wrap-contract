@@ -1,8 +1,8 @@
 use soroban_sdk::contracterror;
 
-#[contracterror]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
-#[repr(u32)]
+#kcontracterror]
+#derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+##repr(u32)
 pub enum ContractError {
     AlreadyInitialized = 1,
     NotInitialized = 2,
@@ -32,7 +32,7 @@ pub enum ContractError {
     // Governance proposal errors
     ProposalNotFound = 25,
     ProposalNotActive = 26,
-    ProposalAlreadyVoted = 27,
+    ProposalAreadyVoted = 27,
     ProposalVotingPeriodNotEnded = 28,
     ProposalVotingPeriodEnded = 29,
     ProposalDefeated = 30,
