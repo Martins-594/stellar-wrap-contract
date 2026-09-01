@@ -9,7 +9,7 @@ use ed25519_dalek::{Signer, SigningKey};
 use soroban_sdk::{
     symbol_short,
     testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke},
-    Address, BytesN, Env, IntoVal, Symbol,
+    Address, Bytes, BytesN, Env, IntoVal, Symbol,
 };
 
 use super::*;
@@ -1290,6 +1290,10 @@ fn test_create_admin_proposal_duration_overflow_asserts_arithmetic_overflow() {
 
     env.mock_all_auths();
     client.initialize(&admin, &pubkey);
+
+    env.ledger().with_mut(|li| {
+        li.timestamp = 1;
+    });
 
     let result = client.try_create_admin_proposal(&u64::MAX);
     assert_eq!(
