@@ -1,7 +1,4 @@
 name: Cargo Fmt
-
-name: Cargo Fmt
-
 on:
   push:
     branches: [ main ]
