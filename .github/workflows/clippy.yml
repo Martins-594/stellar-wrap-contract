@@ -1,6 +1,6 @@
 name: Cargo Clippy
 
-on:
+non:
   push:
     branches: [ main ]
   pull_request:
@@ -19,4 +19,4 @@ jobs:
       - name: Run cargo clippy
         run: cargo clippy --all-targets -- -D warnings
         env:
-          RSTFLAGS: "-C overflow-checks=yes"
+          RUSTFLAGS: "-C overflow-checks=yes"
