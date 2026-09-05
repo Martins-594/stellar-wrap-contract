@@ -17,7 +17,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      RSTFLAGS: "-D warnings -C overflow-checks=on"
+      RUSTFLAGS: "-D warnings -C overflow-checks=on"
     steps:
     - uses: actions/checkout@v4
     - name: Install Rust
@@ -41,18 +41,16 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
-    # RSTFLAGS is intentionally NOT set here.
+    # RUSTFLAGS is intentionally NOT set here.
     # The test job sets "-D warnings" job-wide; tarpaulin instruments code
     # under its own cargo invocation and may emit warnings from proc-macros
     # or generated code that would otherwise fail CI.  Keeping this job free
     # of -D warnings isolates any tarpaulin-side noise from the test/lint gate.
     steps:
     - uses: actions/checkout@v4
-
-    - name: Install Rust (native only -- no wasm32 target needed for tarpaulin)
+    - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
-
-    - name: Cache cargo registry
+    - name: Install cargo-tarpaulin
       uses: actions/cache@v4
       with:
         path:
@@ -60,34 +58,18 @@ jobs:
             ~/cargo/registry
             ~/cargo/git
             ~/cargo/bin
-        key: ${ runner.os }-cargo-tarpaulin-$${ hashFiles('**/Cargo.lock') }
+        key: $``{ runner.os }}-cargo-tarpaulin-$``{ hashFiles('**/Cargo.lock') }}
         restore-keys:
           |
-            ${ runner.os }-cargo-tarpaulin-
-
-    - name: Install cargo-tarpaulin
-      # Only install if not already cached.  --locked ensures the exact
-      # version published in Cargo.lock (or the tarpaulin registry entry) is
-      # used, giving reproducible installs across runs.
-      run:
-        |
-          if ! command -v cargo-tarpaulin &&>/dev/null; then
-            cargo install cargo-tarpaulin --locked
-          fi
-
+            $``{ runner.os }}-cargo-tarpaulin-
     - name: Run coverage
-      # tarpaulin.toml configures: --lib, Html+Xml output, coverage/ dir,
-      # fail-under=90, and file exclusions.  Passing --config makes the
-      # location explicit so this job is not sensitive to working-directory.
       run: cargo tarpaulin --config tarpaulin.toml
-
-    - name: Upload coverage to Codecow
+    - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
         files: coverage/cobertura.xml
-        fail_ci_if_error: false   # don't block CI on codecov outages
-        token: ${ secrets.CODECOV_TOKEN }
-
+        fail_ci_if_error: false
+        token: $``{ secrets.CODECOV_TOKEN }}
     - name: Upload HTML coverage report as artifact
       uses: actions/upload-artifact@v4
       with:
