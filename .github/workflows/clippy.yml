@@ -1,6 +1,5 @@
 name: Cargo Clippy
-
-non:
+on:
   push:
     branches: [ main ]
   pull_request:
