@@ -41,11 +41,13 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
-    # RUSTFLAGS is intentionally NOT set here.
+    # RUSTFLAGS intentionally avoids -D warnings but enables overflow-checks.
     # The test job sets "-D warnings" job-wide; tarpaulin instruments code
     # under its own cargo invocation and may emit warnings from proc-macros
     # or generated code that would otherwise fail CI.  Keeping this job free
     # of -D warnings isolates any tarpaulin-side noise from the test/lint gate.
+    env:
+      RUSTFLAGS: "-C overflow-checks=on"
     steps:
     - uses: actions/checkout@v4
     - name: Install Rust
